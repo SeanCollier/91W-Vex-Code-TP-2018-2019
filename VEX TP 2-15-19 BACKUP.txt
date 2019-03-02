@@ -1,0 +1,700 @@
+--  CONFIG  --
+
+vex::brain Brain = vex::brain();
+vex::controller MainC = vex::controller();
+vex::controller PartnerC = vex::controller(vex::controllerType::partner);
+
+vex::motor FRMotor = vex::motor(vex::PORT2,true);
+vex::motor FLMotor = vex::motor(vex::PORT4);
+vex::motor BRMotor = vex::motor(vex::PORT1,true);
+vex::motor BLMotor = vex::motor(vex::PORT3);
+vex::motor IntakeMotor = vex::motor(vex::PORT5,true);
+vex::motor Fly1Motor = vex::motor(vex::PORT11);
+vex::motor Fly2Motor = vex::motor(vex::PORT20,true);
+vex::motor ArmMotor = vex::motor(vex::PORT12);
+
+vex::pot Pot1 = vex::pot(Brain.ThreeWirePort.H);
+
+--  MAIN --
+
+#include "robot-config.h"
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*        Description: Competition template for VCS VEX V5                    */
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+
+//Creates a competition object that allows access to Competition methods.
+vex::competition    Competition;
+
+/*---------------------------------------------------------------------------*/
+/*                          Pre-Autonomous Functions                         */
+/*                                                                           */
+/*  You may want to perform some actions before the competition starts.      */
+/*  Do them in the following function.  You must return from this function   */
+/*  or the autonomous and usercontrol tasks will not be started.  This       */
+/*  function is only called once after the cortex has been powered on and    */ 
+/*  not every time that the robot is disabled.                               */
+/*---------------------------------------------------------------------------*/
+
+void pre_auton( void ) {
+  // All activities that occur before the competition starts
+  // Example: clearing encoders, setting servo positions, ...
+  
+}
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              Autonomous Task                              */
+/*                                                                           */
+/*  This task is used to control your robot during the autonomous phase of   */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*  You must modify the code to add your own robot specific commands here.   */
+/*---------------------------------------------------------------------------*/
+void move (int dist, int vel)
+{
+    FLMotor.setVelocity(vel, vex::velocityUnits::pct);
+    FRMotor.setVelocity(vel, vex::velocityUnits::pct);
+    BLMotor.setVelocity(vel, vex::velocityUnits::pct);
+    BRMotor.setVelocity(vel, vex::velocityUnits::pct);
+    
+    FLMotor.rotateFor(dist, vex::rotationUnits::deg, false);
+    FRMotor.rotateFor(dist, vex::rotationUnits::deg, false);
+    BLMotor.rotateFor(dist, vex::rotationUnits::deg, false);
+    BRMotor.rotateFor(dist, vex::rotationUnits::deg);
+    
+    vex::task::sleep(50);
+    
+}//end move
+
+void turn (int dist, int vel, int left)
+{
+    FLMotor.setVelocity(vel, vex::velocityUnits::pct);
+    FRMotor.setVelocity(vel, vex::velocityUnits::pct);
+    BLMotor.setVelocity(vel, vex::velocityUnits::pct);
+    BRMotor.setVelocity(vel, vex::velocityUnits::pct);
+    if (left == 1) {
+        FLMotor.rotateFor(-dist, vex::rotationUnits::deg, false);
+        FRMotor.rotateFor(dist, vex::rotationUnits::deg, false);
+        BLMotor.rotateFor(-dist, vex::rotationUnits::deg, false);
+        BRMotor.rotateFor(dist, vex::rotationUnits::deg, true);
+    }
+    else {
+        FLMotor.rotateFor(dist, vex::rotationUnits::deg, false);
+        FRMotor.rotateFor(-dist, vex::rotationUnits::deg, false);
+        BLMotor.rotateFor(dist, vex::rotationUnits::deg, false);
+        BRMotor.rotateFor(-dist, vex::rotationUnits::deg, true);
+    }
+    
+    vex::task::sleep(50);
+    
+}//end turn
+
+void startintake (int inwards)
+{
+    switch(inwards)
+    {
+        case 1 : IntakeMotor.spin(vex::directionType::fwd,100,vex::velocityUnits::pct);
+            break;
+        case 0 : IntakeMotor.spin(vex::directionType::rev,100,vex::velocityUnits::pct);
+            break;
+    }//end switch
+}//end startintake
+
+void stopintake ()
+{
+    IntakeMotor.stop(vex::brakeType::coast);
+}//end stopintake
+
+void arm(int dist, int vel, bool interrupt)
+{
+    ArmMotor.setVelocity(vel, vex::velocityUnits::pct);
+    ArmMotor.rotateFor(dist, vex::rotationUnits::deg, interrupt);
+}//end arm
+
+void flystart(int vel)
+{
+    Fly1Motor.spin(vex::directionType::fwd,vel,vex::velocityUnits::pct);
+    Fly2Motor.spin(vex::directionType::fwd,vel,vex::velocityUnits::pct);
+}
+
+void flystop()
+{
+    Fly1Motor.stop(vex::brakeType::coast);
+    Fly2Motor.stop(vex::brakeType::coast);
+}
+
+void wait(int time)
+{
+    vex::task::sleep(time);
+}//end wait
+
+void selectauton(int choose)
+{
+    if (choose == 0)
+    {
+        //Do nothing
+    }
+    else if (choose == 1)
+    {
+        //Red team front square
+        //Drives forward to shoot preload at mid flag, drives to hit lower flag, then parks
+        flystart(100);
+        move(800,60);
+        wait(1000);
+        startintake(1);
+        wait(800);
+        stopintake();
+        flystop();
+        turn(50,40,true);
+        wait(200);
+        move(500,50);
+        wait(400);
+        move(-1950,60);
+        wait(400);
+        turn(320,60,false);
+        wait(400);
+        startintake(1);
+        move(300,40);
+        wait(400);
+        move(1200,90);
+        FRMotor.stop(vex::brakeType::brake);
+        FLMotor.stop(vex::brakeType::brake);
+        BRMotor.stop(vex::brakeType::brake);
+        BLMotor.stop(vex::brakeType::brake);
+        stopintake();
+    }
+    else if (choose == 2)
+    {
+        //Red team back square
+        //Flips cap, knocks cap out of way, drives onto platform
+        ArmMotor.setStopping(vex::brakeType::hold);
+        arm(-1725,100,true);
+        move(-1000,60);
+        arm(400,80,true);
+        wait(20);
+        arm(-280,100,true);
+        wait(400);
+        move(300,40);
+        turn(380,45,true);
+        wait(400);
+        move(-280,40);
+        wait(400);
+        turn(850,20,false);
+        wait(200);
+        startintake(1);
+        arm(200,60,false);
+        move(135,30);
+        wait(400);
+        turn(270,50,true);
+        wait(400);
+        move(-200,30);
+        wait(200);
+        move(1300,100);
+        stopintake();
+    }
+    else if (choose == 3)
+    {
+        //Blue team front square
+        //Drives forward to shoot preload at mid flag, drives to hit lower flag, then tries to flip cap
+        flystart(100);
+        move(800,60);
+        wait(1000);
+        startintake(1);
+        wait(800);
+        stopintake();
+        flystop();
+        turn(50,40,false);
+        wait(200);
+        move(500,50);
+        wait(400);
+        move(-2050,60);
+        wait(400);
+        turn(320,60,true);
+        wait(400);
+        startintake(1);
+        move(300,40);
+        wait(400);
+        move(1100,90);
+        FRMotor.stop(vex::brakeType::brake);
+        FLMotor.stop(vex::brakeType::brake);
+        BRMotor.stop(vex::brakeType::brake);
+        BLMotor.stop(vex::brakeType::brake);
+        stopintake();
+    }
+    else if (choose == 4)
+    {
+        //Blue team back square
+        //Flips cap, knocks cap out of way, does not drive onto platform
+        ArmMotor.setStopping(vex::brakeType::hold);
+        arm(-1725,100,true);
+        move(-1000,60);
+        arm(400,80,true);
+        wait(20);
+        arm(-280,100,true);
+        wait(400);
+        move(300,40);
+        turn(380,45,false);
+        wait(400);
+        move(-280,40);
+        wait(400);
+        turn(850,20,true);
+        wait(200);
+        startintake(1);
+        arm(200,60,false);
+        move(135,30);
+        wait(400);
+        turn(270,50,false);
+        wait(400);
+        move(-200,30);
+        wait(200);
+        move(300,40);
+        wait(400);
+        move(1300,100);
+        stopintake();
+    }
+    else if (choose == 5)
+    {
+        //PROGRAMMING SKILLS (Red team front square)
+        //Drives forward to shoot preload at mid flag, drives to hit lower flag, then center parks
+        flystart(100);
+        move(800,60);
+        wait(1000);
+        startintake(1);
+        wait(800);
+        stopintake();
+        flystop();
+        turn(50,40,true);
+        wait(200);
+        move(500,50);
+        wait(400);
+        move(-1950,60);
+        wait(400);
+        turn(320,60,false);
+        wait(400);
+        startintake(1);
+        move(300,40);
+        wait(400);
+        move(1200,90);
+        wait(600);
+        move(900,90);
+        stopintake();
+        FRMotor.stop(vex::brakeType::brake);
+        FLMotor.stop(vex::brakeType::brake);
+        BRMotor.stop(vex::brakeType::brake);
+        BLMotor.stop(vex::brakeType::brake);
+    }
+    else if (choose == 6)
+    {
+        //Blue team back square v2
+        //Shoots a ball at the high mid flag, turns and puts arm down to face cap, flips cap, turns to try and hit other cap
+        flystart(88);
+        wait(4500);
+        startintake(1);
+        wait(800);
+        flystop();
+        stopintake();
+        move(200,50);
+        turn(350,50,true);
+        wait(100);
+        arm(-1760,100,true);
+        wait(100);
+        move(-1075,60);
+        wait(500);
+        arm(400,80,true);
+        wait(20);
+        arm(-280,100,true);
+        wait(400);
+        turn(500,40,true);
+        
+    }
+    else if (choose == 7)
+    {
+        //Programming Skills v2
+        //Drives forward to get ball, backs up turns and shoots 2 flags, drives to hit lower flag, then parks
+        move(1150,70);
+        startintake(1);
+        wait(250);
+        stopintake();
+        flystart(100);
+        move(-1150,70);
+        move(-120,40);
+        wait(800);
+        turn(290,60,true);
+        wait(600);
+        move(200,40);
+        startintake(1);
+        wait(600);
+        stopintake();
+        //start old program
+        move(500,70);
+        wait(1000);
+        startintake(1);
+        wait(800);
+        stopintake();
+        flystop();
+        turn(50,40,true);
+        wait(300);
+        move(550,80);
+        wait(600);
+        move(-1750,60);
+        wait(400);
+        turn(320,60,false);
+        wait(400);
+        startintake(1);
+        move(300,40);
+        wait(400);
+        move(1200,90);
+        wait(600);
+        move(900,90);
+        FRMotor.stop(vex::brakeType::brake);
+        FLMotor.stop(vex::brakeType::brake);
+        BRMotor.stop(vex::brakeType::brake);
+        BLMotor.stop(vex::brakeType::brake);
+        stopintake();
+    }
+    else if (choose == 8)
+    {
+        //Blue Front V2
+        //Gets ball from cap, shoots and hits all 3 flags, flips cap
+        move(1200,70);
+        startintake(1);
+        wait(250);
+        stopintake();
+        flystart(100);
+        move(-1100,70);
+        move(-120,40);
+        wait(800);
+        turn(230,60,false);
+        wait(600);
+        move(200,40);
+        startintake(1);
+        wait(550);
+        stopintake();
+        //start old program
+        move(530,70);
+        wait(1000);
+        startintake(1);
+        wait(800);
+        stopintake();
+        flystop();
+        turn(40,40,false);
+        wait(300);
+        move(650,80);
+        wait(600);
+        move(-1000,60);
+        wait(400);
+        turn(190,60,true);
+        wait(400);
+        startintake(0);
+        move(1600,80);
+        stopintake();
+    }
+}
+
+void autonomous( void )
+{   
+    MainC.Screen.print(Pot1.value(vex::analogUnits::range12bit));
+    
+    selectauton(8);
+    // 0 = nothing
+    // 1 = red front
+    // 2 = red back
+    // 3 = blue front
+    // 4 = blue back
+    // 5 = programming skills
+    // 6 = blue back v2
+    // 7 = prog skills v2
+    // 8 = blue front v2
+
+}//end autonomous
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                              User Control Task                            */
+/*                                                                           */
+/*  This task is used to control your robot during the user control phase of */
+/*  a VEX Competition.                                                       */
+/*                                                                           */
+/*  You must modify the code to add your own robot specific commands here.   */
+/*---------------------------------------------------------------------------*/
+
+double Axis(int n)
+    {
+        double AxisVal = 0;
+        switch(n)
+        {
+            case 1 : AxisVal = MainC.Axis1.position(vex::percentUnits::pct);
+                break;
+            case 3 : AxisVal = MainC.Axis3.position(vex::percentUnits::pct);
+                break;
+        }//end switch
+        if (AxisVal > 5 || AxisVal < -5)
+            {
+                return AxisVal;
+            }//end if
+        else
+            {
+                return 0;
+            }//end else
+    }//end Axis
+
+
+double HundredCurve(double n)
+{
+    if (n > 0)
+    {
+        return ((n*n)/100.0);
+    }//end if
+    else
+    {
+        return -((n*n)/100.0);
+    }//end else
+}//end HundredCurve
+
+bool runningarmtask = false;
+int FlickTask()
+{
+    //Quickly flicks the arm up and down to flip a cap.
+    ArmMotor.setVelocity(80,vex::velocityUnits::pct);
+    ArmMotor.rotateFor(400,vex::rotationUnits::deg);
+    vex::task::sleep(50);
+    ArmMotor.rotateFor(-370,vex::rotationUnits::deg);
+    runningarmtask = false;
+    return(0);
+}//end FlickTask
+
+bool runningdrivetask = false;
+int DriveTask()
+{
+    //Moves robot forward enough to shoot a mid flag after shooting a high flag.
+    turn(20,50,true);
+    move(650,50);
+    runningdrivetask = false;
+    return(0);
+}//end DriveTask
+
+void usercontrol( void ) {
+    
+    double Axis3 = 0;
+    double Axis1 = 0;
+    double rmv = (Axis3-Axis1);
+    double lmv = (Axis3+Axis1);
+    bool togglearmhold = false;
+    bool holdarm = true;
+    bool startarmtask = false;
+    bool startdrivetask = false;
+    int flytarget = 0;
+    int flyactual = 0;
+    int slewrate = 4.5;
+    
+    PartnerC.Screen.setCursor(1,0);
+    PartnerC.Screen.print("Fly speed = ");
+        
+    while (true) {
+        
+        /*******DRIVE CONTROLS*******/
+        
+        //Setting variable values to be used in drive code.
+        Axis3 = HundredCurve(Axis(3));
+        Axis1 = HundredCurve(Axis(1));
+        rmv = (Axis3-Axis1);
+        lmv = (Axis3+Axis1);
+        
+        //Nested if statements which start drive task with Btn R1.
+        if(MainC.ButtonR1.pressing()){
+			if(!startdrivetask){
+				startdrivetask = true;
+                runningdrivetask = true;
+				vex::task t = vex::task(DriveTask);
+			}
+		}
+		if(!MainC.ButtonR1.pressing()){
+			if(startdrivetask){
+				startdrivetask = false;
+			}
+		}
+        
+        //If/else statements which set drive movement based on controller inputs.
+        if (runningdrivetask)
+        {
+            //Do not modify drive motor values because the task is running
+        }//end if
+        else if (MainC.ButtonR2.pressing())
+        {
+            //Brake button (R2) is pressed. Motors stop immidiately
+            FRMotor.stop(vex::brakeType::brake);
+            FLMotor.stop(vex::brakeType::brake);
+            BRMotor.stop(vex::brakeType::brake);
+            BLMotor.stop(vex::brakeType::brake);
+        }
+        else if (MainC.ButtonL1.pressing()||MainC.ButtonL2.pressing())
+        {
+            //Slow turn button (L1) is pressed. Motors run at 1/4 normal power.
+            FRMotor.spin(vex::directionType::fwd,rmv/4,vex::velocityUnits::pct);
+            FLMotor.spin(vex::directionType::fwd,lmv/4,vex::velocityUnits::pct);
+            BRMotor.spin(vex::directionType::fwd,rmv/4,vex::velocityUnits::pct);
+            BLMotor.spin(vex::directionType::fwd,lmv/4,vex::velocityUnits::pct);
+        }//end else if
+        else
+        {
+            //Motors run at normal speed according to axis values.
+            FRMotor.spin(vex::directionType::fwd,rmv,vex::velocityUnits::pct);
+            FLMotor.spin(vex::directionType::fwd,lmv,vex::velocityUnits::pct);
+            BRMotor.spin(vex::directionType::fwd,rmv,vex::velocityUnits::pct);
+            BLMotor.spin(vex::directionType::fwd,lmv,vex::velocityUnits::pct);
+        }//end else
+        
+        /*******ARM CONTROLS*******/
+        
+        //Nested if statements which start FlickTask with Btn Up.
+        if(PartnerC.ButtonUp.pressing()){
+			if(!startarmtask){
+				startarmtask = true;
+                runningarmtask = true;
+				vex::task t = vex::task(FlickTask);
+			}
+		}
+		if(!PartnerC.ButtonUp.pressing()){
+			if(startarmtask){
+				startarmtask = false;
+			}
+		}
+        
+        //If/else statements which set arm movement based on controller inputs and variables.
+        if (runningarmtask)
+        {
+            //Do not modify arm motor velocity because the task is running
+        }//end if
+        else if (PartnerC.Axis3.position(vex::percentUnits::pct) >= 10 || PartnerC.Axis3.position(vex::percentUnits::pct) <= -10)
+        {
+            //Axis is moved out of dead zone, so motor spins with the corresponding velocity.
+            ArmMotor.spin(vex::directionType::fwd,(HundredCurve(PartnerC.Axis3.position(vex::percentUnits::pct))),vex::velocityUnits::pct);
+        }//end else if
+        /*else if (holdarm == false)
+        {
+            //Arm holding variable is not enabled.
+            ArmMotor.stop(vex::brakeType::coast);
+        }//end else if*/
+        else
+        {
+            //Arm holding variable is enabled.
+            ArmMotor.stop(vex::brakeType::hold);
+        }//end else
+        
+        //Nested if statements to control arm holding toggle button
+        if(PartnerC.ButtonY.pressing()){
+			if(!togglearmhold){
+				togglearmhold = true;
+				holdarm = !holdarm;
+			}
+		}
+		if(!PartnerC.ButtonY.pressing()){
+			if(togglearmhold){
+				togglearmhold = false;
+			}
+		}
+        
+        /*******INTAKE CONTROLS*******/
+        
+        //If/else statements which control intake movement and speed based on controller inputs.
+        if (PartnerC.ButtonR1.pressing())
+        {
+            IntakeMotor.spin(vex::directionType::fwd,60,vex::velocityUnits::pct);
+        }//end if
+        else if (PartnerC.ButtonR2.pressing())
+        {
+            IntakeMotor.spin(vex::directionType::rev,60,vex::velocityUnits::pct);
+        }//end else if
+        else if (PartnerC.ButtonX.pressing())
+        {
+            IntakeMotor.spin(vex::directionType::fwd,20,vex::velocityUnits::pct);
+        }
+        else if (PartnerC.Axis2.position(vex::percentUnits::pct) >= 10 || PartnerC.Axis2.position(vex::percentUnits::pct) <= -10)
+        {
+            IntakeMotor.spin(vex::directionType::fwd,HundredCurve(PartnerC.Axis2.position(vex::percentUnits::pct)),vex::velocityUnits::pct);
+        }//end else if
+        else
+        {
+            IntakeMotor.stop(vex::brakeType::coast);
+        }//end else
+        
+        /*******FLYWHEEL CONTROLS*******/
+        
+        //If/else statement which sets flywheel target speed
+        if (PartnerC.ButtonL1.pressing())
+        {
+            flytarget = 100;
+        }
+        else if (PartnerC.ButtonA.pressing())
+        {
+            flytarget = 92;
+        }
+        else
+        {
+            flytarget = 0;
+        }
+       
+        //If/else statements which modifies the flywheel velocity based on the slewrate (current slew = 5)
+        if(flyactual == flytarget)
+        {
+            //Do not modify flywheel values
+        }
+        else if(flyactual <= flytarget)
+        {
+            flyactual += slewrate;
+        }
+        else
+        {
+            flyactual -= slewrate;
+        }
+        
+        if (!PartnerC.ButtonL2.pressing())
+        {
+            Fly1Motor.spin(vex::directionType::fwd,flyactual,vex::velocityUnits::pct);
+            Fly2Motor.spin(vex::directionType::fwd,flyactual,vex::velocityUnits::pct);
+        }
+        else 
+        {
+            Fly1Motor.spin(vex::directionType::rev,100,vex::velocityUnits::pct);
+            Fly2Motor.spin(vex::directionType::rev,100,vex::velocityUnits::pct);
+        }
+        
+        /*******PRINTING TO SCREEN*******/
+        
+        if ((85 <= Fly1Motor.velocity(vex::velocityUnits::pct)) && (Fly1Motor.velocity(vex::velocityUnits::pct) <= 110))
+        {
+            Brain.Screen.clearScreen(vex::color::green);
+        }
+        else
+        {
+            Brain.Screen.clearScreen(vex::color::red);
+        }
+        PartnerC.Screen.setCursor(1,13);
+        PartnerC.Screen.print(Fly1Motor.velocity(vex::velocityUnits::pct));
+        
+        vex::task::sleep(10); //Sleep the task for a short amount of time to prevent wasted resources.
+        
+    }//end while
+    
+}//end usercontrol
+
+//
+// Main will set up the competition functions and callbacks.
+//
+int main() {
+    
+    //Run the pre-autonomous function. 
+    pre_auton();
+    
+    //Set up callbacks for autonomous and driver control periods.
+    Competition.autonomous( autonomous );
+    Competition.drivercontrol( usercontrol );
+
+    //Prevent main from exiting with an infinite loop.                        
+    while(1) {
+      vex::task::sleep(100);//Sleep the task for a short amount of time to prevent wasted resources.
+    }//end while
+       
+}//end main
